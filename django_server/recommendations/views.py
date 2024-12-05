@@ -223,12 +223,14 @@ class RecommendProducts(APIView):
         if not category:
             return JsonResponse({"error": "카테고리가 제공되지 않았습니다."}, status=400)
         
+        '''
         # 클라이언트에서 전달받은 상품 이름 목록
         selected_products = request.data.get('selected_products', [])
         
         if not selected_products:
             return JsonResponse({"error": "상품 목록이 비어 있습니다."}, status=400)
-
+        '''
+            
         # CSV 파일 경로
         USER_CSV_PATH = os.path.join(settings.BASE_DIR, "data/all_users.csv")
         COSMETICS_CSV_PATH = os.path.join(settings.BASE_DIR, "data/final_items.csv")
@@ -238,10 +240,6 @@ class RecommendProducts(APIView):
         users = pd.read_csv(USER_CSV_PATH)
         cosmetics = pd.read_csv(COSMETICS_CSV_PATH)
         ratings = pd.read_csv(RATINGS_CSV_PATH)
-
-        print("Users CSV:", users.head())  # debugging
-        print("Cosmetics CSV:", cosmetics.head())  # debugging
-        print("Ratings CSV:", ratings.head())  # debugging
 
         # 카테고리로 필터링 (product_type 컬럼을 기준으로)
         filtered_ratings = ratings[ratings['product_type'] == category]
@@ -283,7 +281,6 @@ class RecommendProducts(APIView):
             'rating': 0       # 새 유저이므로 초기값으로 0
         }
         filtered_ratings = pd.concat([filtered_ratings, pd.DataFrame([new_rating_row])], ignore_index=True)
-
 
         # 협업필터링 알고리즘
         user_item_matrix = make_ratings_matrix(filtered_ratings)
