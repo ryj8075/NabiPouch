@@ -7,9 +7,10 @@ from django.http import HttpResponse
 
 import numpy as np
 import pandas as pd
+import os
 from django.http import JsonResponse
 from rest_framework.views import APIView
-#from .serializers import ProductSerializer
+from django.conf import settings
 
 from preprocessing import encoding
 
@@ -32,7 +33,6 @@ def product_id_selection(selected_product_ids, df):
     # users, ratings, cosmetics에서 해당 product_id들만 추출
     filtered_df = df[df['product_id'].isin(selected_product_ids)]
     return filtered_df
-
 
 # 유저 간 유사도 행렬 계산 : Cosine similarity 사용
 from sklearn.metrics.pairwise import cosine_similarity
@@ -65,7 +65,7 @@ def combined_similarity(ratings, users):
 
     # 유저 프로파일 데이터에서 나머지 컬럼들만 사용하여 cosine 유사도 계산
     # 예: skin_type, personal_color 외 다른 컬럼들은 one-hot 인코딩된 정보들
-    other_profile_columns = ['sensitiveness', 'trouble', 'atopy', 'dead_skin', 'eyebags', 'pore', 'elasticity', 'wrinkle', 'blemish', 'lightening']  # 등
+    other_profile_columns = ['sensitiveness', 'trouble', 'atopy', 'dead_skin', 'eyebags', 'pore', 'elasticity', 'wrinkle', 'blemish', 'lightening']
 
     ratings_with_profile_for_similarity = ratings_with_profile[other_profile_columns]
 
@@ -201,7 +201,9 @@ def score(model, x_test):
 
 class RecommendProducts(APIView):
     def post(self, request):
-        # 1. 사용자 데이터 등록
+        print("Request data:", request.data)  # debugging
+
+        # 사용자 데이터 등록
         user_data = request.data.get('user_data')  # 사용자 데이터는 JSON 객체로 전달됨
         if not user_data:
             return JsonResponse({"error": "사용자 데이터가 비어 있습니다."}, status=400)
@@ -211,31 +213,48 @@ class RecommendProducts(APIView):
         personal_color = user_data.get('personalColor')
         skin_concerns = user_data.get('skinConcerns', [])  # 피부 고민 목록
 
+        print(f"Received user data: {user_data}")  # 사용자 데이터 확인
+
         if not user_id or not skin_type or not personal_color or not skin_concerns:
             return JsonResponse({"error": "사용자 데이터의 필수 항목이 누락되었습니다."}, status=400)
 
+        # 클라이언트로부터 카테고리 텍스트를 받기
+        category = request.data.get('category')
+        if not category:
+            return JsonResponse({"error": "카테고리가 제공되지 않았습니다."}, status=400)
+        
         # 클라이언트에서 전달받은 상품 이름 목록
         selected_products = request.data.get('selected_products', [])
         
         if not selected_products:
             return JsonResponse({"error": "상품 목록이 비어 있습니다."}, status=400)
-        
+
         # CSV 파일 경로
-        USER_CSV_PATH = 'C:\\Users\\ryj80\\OneDrive - 경희대학교\\대학교\\5학년 1학기\\소프트웨어융합캡스톤디자인\\크롤링\\1_users.csv'
-        COSMETICS_CSV_PATH = 'C:\\Users\\ryj80\\OneDrive - 경희대학교\\대학교\\5학년 1학기\\소프트웨어융합캡스톤디자인\\크롤링\\1_items.csv'
-        RATINGS_CSV_PATH = 'C:\\Users\\ryj80\\OneDrive - 경희대학교\\대학교\\5학년 1학기\\소프트웨어융합캡스톤디자인\\크롤링\\1_ratings.csv'
+        USER_CSV_PATH = os.path.join(settings.BASE_DIR, "data/all_users.csv")
+        COSMETICS_CSV_PATH = os.path.join(settings.BASE_DIR, "data/final_items.csv")
+        RATINGS_CSV_PATH = os.path.join(settings.BASE_DIR, "data/final_ratings.csv")
 
         # 데이터 로드
         users = pd.read_csv(USER_CSV_PATH)
         cosmetics = pd.read_csv(COSMETICS_CSV_PATH)
         ratings = pd.read_csv(RATINGS_CSV_PATH)
 
-        # 데이터 필터링
+        print("Users CSV:", users.head())  # debugging
+        print("Cosmetics CSV:", cosmetics.head())  # debugging
+        print("Ratings CSV:", ratings.head())  # debugging
+
+        # 카테고리로 필터링 (product_type 컬럼을 기준으로)
+        filtered_ratings = ratings[ratings['product_type'] == category]
+        filtered_cosmetics = cosmetics[cosmetics['product_type'] == category]
+
+        '''
+        # 현재 페이지에 있는 상품들만 모으는 데이터 필터링
         selected_product_ids = recommend_products(selected_products)
         filtered_users = selected_product_ids(selected_product_ids, users)
         filtered_ratings = selected_product_ids(selected_product_ids, ratings)
         filtered_cosmetics = selected_product_ids(selected_product_ids, cosmetics)
-
+        '''
+        
         # 사용자 데이터를 데이터프레임에 추가
         new_user_row = {
             'user_id': user_id,
@@ -253,12 +272,13 @@ class RecommendProducts(APIView):
             'blemish': 1 if 'blemish' in skin_concerns else 0,
             'lightening': 1 if 'lightening' in skin_concerns else 0,
         }
-        filtered_users = pd.concat([filtered_users, pd.DataFrame([new_user_row])], ignore_index=True)
+        users = pd.concat([users, pd.DataFrame([new_user_row])], ignore_index=True)
 
         # Ratings 데이터프레임에 새로운 유저 행 추가 (초기값 설정)
         new_rating_row = {
             'user_id': user_id,
             'product_id': 0,  # 새 유저이므로 초기값으로 0
+            'product_type': '',  # 새 유저이므로 초기값으로 빈 문자열
             'review': '',     # 새 유저이므로 초기값으로 빈 문자열
             'rating': 0       # 새 유저이므로 초기값으로 0
         }
@@ -267,9 +287,10 @@ class RecommendProducts(APIView):
 
         # 협업필터링 알고리즘
         user_item_matrix = make_ratings_matrix(filtered_ratings)
-        user_similarity_with_profile = combined_similarity(filtered_ratings, filtered_users)
-        userID = '202짱'  # 임시
+        user_similarity_with_profile = combined_similarity(filtered_ratings, users)
         recommended = recommender_with_profile(user_id, user_similarity_with_profile, user_item_matrix, filtered_cosmetics, n_items=3)
         
+        print("Recommended products:", recommended)  # debugging
+
         # 추천 결과 반환
         return JsonResponse({"recommended_products": recommended}, status=200)

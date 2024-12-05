@@ -4,5 +4,5 @@ from . import views
 from .views import RecommendProducts
 
 urlpatterns = [
-    path('recommend/', RecommendProducts.as_view(), name='product-recommend'),
+    path('recommend_products/', RecommendProducts.as_view(), name='recommend_products'),
 ]

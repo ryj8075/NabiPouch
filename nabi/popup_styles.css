@@ -16,7 +16,7 @@ html {
 }
 
 .container {
-  width: 90%;
+  width: 95%;
   max-width: 360px; /* 컨텐츠 최대 너비 */
   margin: 20px auto;
   background: #fff;
@@ -125,19 +125,31 @@ button:hover {
 
 input[type="text"], select {
   padding: 8px;
-  font-size: 16px;
+  font-size: 14px;
   border-radius: 5px;
   border: 1px solid #ccc;
 }
 
 label {
-  font-size: 16px;
+  font-size: 14px;
   margin-bottom: 5px;
 }
 
+#skin-concern-checkboxes {
+  display: flex;
+  flex-wrap: wrap; /* 여러 줄로 감싸기 */
+  gap: 10px; /* 체크박스 간 간격 */
+}
+
 #skin-concern-checkboxes label {
-  display: block;
-  margin: 5px 0;
+  width: calc(33.33% - 10px); /* 한 행에 3개씩 배치, gap을 고려한 너비 */
+  display: flex;
+  align-items: center; /* 체크박스와 텍스트 수직 정렬 */
+  white-space: nowrap; /* 텍스트 줄바꿈 방지 */
+}
+
+#skin-concern-checkboxes input[type="checkbox"] {
+  margin-right: 5px; /* 체크박스와 텍스트 간격 */
 }
 
 .footer {

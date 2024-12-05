@@ -43,6 +43,102 @@ document.addEventListener("DOMContentLoaded", () => {
         );
     }
 
+    // 제품 카테고리와 userId를 서버에 먼저 전송하는 함수
+    function sendCategoryToServer(userId, productCategory) {
+        return new Promise((resolve, reject) => {
+            fetch("http://127.0.0.1:8000/filter_by_category/", { // 서버 URL 변경
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                mode: 'cors', // CORS 모드 설정
+                body: JSON.stringify({
+                    userId: userId,
+                    category: productCategory
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Error sending category: ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log("Category sent to server successfully:", data);
+                resolve(data); // 서버 응답 반환
+            })
+            .catch(error => {
+                console.error("Error sending category to server:", error);
+                reject(error);
+            });
+        });
+    }
+
+    // 크롬 스토리지에서 userId에 해당하는 user_data를 불러온 후 서버에 보내기
+    function fetchRecommendationsFromServer(userId) {
+        // 크롬 스토리지에서 userId에 해당하는 user_data를 불러오기
+        return new Promise((resolve, reject) => {
+            chrome.storage.sync.get(userId, (result) => {
+                if (chrome.runtime.lastError) {
+                    reject(new Error("Error reading from Chrome Storage"));
+                    return;
+                }
+
+                const userData = result[userId];
+                if (!userData) {
+                    reject(new Error("No user data found for userId: " + userId));
+                    return;
+                }
+
+                // user_data가 존재하면 서버에 요청
+                const { skinType, personalColor, skinConcerns } = userData;
+
+                console.log("Sending request to the server with the following data:", {
+                    userId: userId,
+                    skinType: skinType,
+                    personalColor: personalColor,
+                    skinConcerns: skinConcerns
+                });
+
+                // 서버에 POST 요청 보내기
+                fetch("http://127.0.0.1:8000/recommend_products/", { // 서버 URL로 변경
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    mode: 'cors', // CORS 모드 설정
+                    body: JSON.stringify({
+                        user_data: {
+                            userId: userId,
+                            skinType: skinType,
+                            personalColor: personalColor,
+                            skinConcerns: skinConcerns
+                        },
+                        selected_products: []  // 예시로 빈 배열, 실제 선택된 상품을 넣어야 함
+                    })
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Error fetching recommendations: ${response.statusText}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log(data);
+                    if (data.recommended_products) {
+                        resolve(data.recommended_products); // 추천 상품 리스트 반환
+                    } else {
+                        reject(new Error('No recommendations found.'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    reject(error);
+                });
+            });
+        });
+    }
+
     // 첫 화면: 사용자 ID 입력 처리
     userIdSubmitButton.addEventListener("click", () => {
         const userId = userIdInput.value.trim();
@@ -52,29 +148,68 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        // 저장된 데이터 확인
+        // 저장된 데이터 확인 및 처리
         chrome.storage.sync.get(userId, (result) => {
             if (result[userId]) {
-                // 데이터가 있을 경우 추천 화면으로 이동
-                const recommendations = generateFixedRecommendations(userId);
+                // 제품 카테고리 추출
+                const categoryElement = document.querySelector(".titBox h1");
+                if (!categoryElement) {
+                    alert("제품 카테고리를 찾을 수 없습니다.");
+                    return;
+                }
+                const productCategory = categoryElement.innerText.trim();
+                console.log("Product Category:", productCategory);
 
-                userIdContainer.style.display = "none";
-                infoRegistrationContainer.style.display = "none"; // 이전 화면도 숨김 처리
-                formContainer.style.display = "block";
+                // 1. 제품 카테고리 서버로 전송
+                sendCategoryToServer(userId, productCategory)
+                    .then(() => {
+                        console.log("Category filtering complete. Fetching recommendations...");
 
-                userIdDisplay.textContent = `${userId} 님과 비슷한 사용자들은 이런 제품을 추천했어요!`;
-                userIdDisplay.classList.remove("hidden");
+                        // 2. 추천 상품 요청
+                        return fetchRecommendationsFromServer(userId);
+                    })
+                    .then(recommendations => {
+                        console.log("Recommendations received:", recommendations);
 
-                // 추천 아이템 표시
-                productList.innerHTML = '';
-                recommendations.forEach(item => {
-                    const li = document.createElement("li");
-                    li.textContent = item;
-                    productList.appendChild(li);
-                });
+                        chrome.storage.sync.get(userId, (result) => {
+                            if (!result[userId]) {
+                                console.error("No user data found for update.");
+                                return;
+                            }
+
+                            // 기존 데이터에 recommendations 업데이트
+                            const updatedData = {
+                                ...result[userId],
+                                recommendations
+                            };
+
+                            chrome.storage.sync.set({ [userId]: updatedData }, () => {
+                                console.log(`Recommendations updated for ${userId}:`, recommendations);
+
+                                // 추천 화면으로 이동
+                                userIdContainer.style.display = "none";
+                                infoRegistrationContainer.style.display = "none"; // 이전 화면도 숨김 처리
+                                formContainer.style.display = "block";
+
+                                userIdDisplay.textContent = `${userId} 님과 비슷한 사용자들은 이런 제품을 추천했어요!`;
+                                userIdDisplay.classList.remove("hidden");
+
+                                // 추천 아이템 표시
+                                productList.innerHTML = '';
+                                recommendations.forEach(item => {
+                                    const li = document.createElement("li");
+                                    li.textContent = item;
+                                    productList.appendChild(li);
+                                });
+                            });
+                        });
+                    })
+                    .catch(error => {
+                        console.error("Failed to fetch recommendations:", error);
+                        alert("추천 상품을 불러오는 데 실패했습니다.");
+                    });
 
             } else {
-                // 데이터가 없을 경우 피부 정보 입력 화면으로 이동
                 alert("피부 정보 등록이 되지 않은 ID입니다. 피부 정보 등록을 진행해주세요.");
                 userIdContainer.style.display = "none";
                 infoRegistrationContainer.style.display = "block";
@@ -102,16 +237,14 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        // 추천 데이터 생성
-        const recommendations = generateFixedRecommendations(userId);
-
         // 저장할 데이터 객체 생성
         const userData = {
             skinType,
             personalColor,
             skinConcerns,
-            recommendations // 고정된 추천 결과 저장
+            recommendations: [] // 고정된 추천 결과 대신 빈 리스트
         };
+        console.log(`User data for ${userId} :`, userData);
 
         // Chrome Storage API로 데이터 저장
         chrome.storage.sync.set({ [userId]: userData }, () => {

@@ -39,9 +39,12 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     # 기존 앱들
     'rest_framework',
+    'corsheaders',  # django-cors-headers 추가
+    'recommendations',
 ]
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",      # CORS 미들웨어 추가
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -123,3 +126,46 @@ STATIC_URL = "static/"
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+
+# CORS 설정
+# 모든 도메인에서의 요청 허용 (테스트용)
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ORIGIN_ALLOW_ALL = True
+
+# 특정 도메인만 허용 (프로덕션 환경에서 권장)
+# CORS_ALLOWED_ORIGINS = [
+#     "http://127.0.0.1:8000",
+#     "http://localhost:8000",
+#     "chrome-extension://<extension-id>",
+# ]
+
+# 크롬 확장 프로그램의 경우 Origin 헤더가 없을 수도 있음
+from corsheaders.defaults import default_headers
+
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    'Content-Type',
+    'X-CSRFToken',
+    'X-Requested-With',
+]
+
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
+
+CORS_ALLOW_CREDENTIALS = True  # 인증 쿠키 허용 (필요시)
+
+# OPTIONS 메서드 처리 (필요시)
+from django.http import JsonResponse
+
+def options(request, *args, **kwargs):
+    response = JsonResponse({'message': 'CORS preflight passed'}, status=200)
+    response["Access-Control-Allow-Origin"] = "*"
+    response["Access-Control-Allow-Methods"] = "POST, GET, OPTIONS"
+    response["Access-Control-Allow-Headers"] = "Content-Type, X-CSRFToken, X-Requested-With"
+    return response
