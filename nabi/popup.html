@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>추천 아이템</title>
+    <link rel="stylesheet" href="popup_styles.css" />
+</head>
+<body>
+    <div class="container">
+        <!-- 첫 화면: 유저 ID 입력 -->
+        <div id="user-id-container">
+            <h1>나와 비슷한 사용자들의 파우치를 열어보자</h1>
+            <label for="user-id-input">User ID</label>
+            <input type="text" id="user-id-input" placeholder="User ID를 입력하세요" />
+            <button id="submit-user-id">입력</button>
+            <p>처음 1회 피부 정보 등록이 필요합니다.</p>
+
+            <!-- 피부 정보 등록 버튼 추가 -->
+            <button id="register-info-button-initial">피부 정보 등록</button>
+        </div>
+
+        <!-- 두 번째 화면: 피부 정보 입력 -->
+        <div id="info-registration-container" class="hidden">
+            <h1>피부 정보를 입력해주세요</h1>
+            <label for="register-user-id-input">User ID</label>
+            <input type="text" id="register-user-id-input" placeholder="User ID를 입력하세요" />
+
+            <label for="skin-type-select">피부 타입</label>
+            <select id="skin-type-select">
+                <option value="">선택하세요</option>
+                <option value="dry">건성</option>
+                <option value="oily">지성</option>
+                <option value="combination">복합성</option>
+                <option value="sensitive">민감성</option>
+            </select>
+
+            <label for="personal-color-select">퍼스널 컬러</label>
+            <select id="personal-color-select">
+                <option value="">선택하세요</option>
+                <option value="warm">웜톤</option>
+                <option value="cool">쿨톤</option>
+            </select>
+
+            <label>피부 고민</label>
+            <div id="skin-concern-checkboxes">
+                <label><input type="checkbox" value="sensitivity" /> 민감성</label>
+                <label><input type="checkbox" value="blackhead" /> 블랙헤드</label>
+                <label><input type="checkbox" value="dryness" /> 건조함</label>
+                <label><input type="checkbox" value="acne" /> 여드름</label>
+                <label><input type="checkbox" value="keratin" /> 각질</label>
+            </div>
+
+            <button id="register-info-button">등록</button>
+            <button id="info-registration-back-button">뒤로가기</button>
+        </div>
+
+        <!-- 추천 결과 화면 -->
+        <div id="form-container" class="hidden">
+            <h2 id="user-id-display" class="hidden"></h2>
+            <ul id="product-list"></ul>
+            <button id="back-button">뒤로가기</button>
+        </div>
+    </div>
+    <script src="popup.js"></script>
+</body>
+</html>

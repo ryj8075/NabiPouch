@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "NabiPouch",
+  "version": "1.0",
+  "description": "Base Level Extension",
+  "permissions": ["scripting", "activeTab", "storage"],
+  "host_permissions": ["https://www.oliveyoung.co.kr/*", "http://localhost:8000/*"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": "hello_extensions.png"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://*.oliveyoung.co.kr/*"],
+      "js": ["content.js"]
+    }
+  ],
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Ctrl+B",
+        "mac": "Command+B"
+      }
+    }
+  }
+}

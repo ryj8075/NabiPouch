@@ -1,0 +1,169 @@
+/* 기본 설정 */
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  text-align: center;
+  background-color: #f9f9f9;
+  width: 400px; /* 고정된 팝업 창 너비 */
+  height: 700px; /* 고정된 팝업 창 높이 */
+  overflow-y: auto; /* 내용이 길어질 경우 스크롤 */
+}
+
+html {
+  width: 400px;
+  height: 700px;
+}
+
+.container {
+  width: 90%;
+  max-width: 360px; /* 컨텐츠 최대 너비 */
+  margin: 20px auto;
+  background: #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  padding: 20px;
+}
+
+h1, h2 {
+  color: #333;
+}
+
+h1 {
+  font-size: 1.1rem;
+  margin: 10px 0;
+}
+
+h2 {
+  font-size: 1rem;
+  margin: 10px 0;
+}
+
+#user-id-display {
+  font-size: 0.8rem;
+  color: #4caf50; /* 초록색 */
+  margin-bottom: 10px;
+}
+
+ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  text-align: left;
+}
+
+li {
+  padding: 10px;
+  border-bottom: 1px solid #eaeaea;
+}
+
+li:last-child {
+  border-bottom: none;
+}
+
+/* 인풋 박스와 버튼 스타일 */
+.input-container {
+  margin-bottom: 20px;
+}
+
+input {
+  width: 70%;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+button {
+  margin-top: 10px;
+  padding: 10px 20px;
+  border: none;
+  background-color: #4caf50; /* 초록색 */
+  color: white;
+  font-size: 0.8rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #45a049; /* 초록색 hover */
+}
+
+/* Footer 스타일 */
+.footer {
+  margin-top: 20px;
+  font-size: 0.8rem;
+  color: #666;
+}
+
+#back-button {
+  margin-top: 20px;
+  padding: 10px 20px;
+  background-color: #4caf50; /* 초록색 */
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+#back-button:hover {
+  background-color: #45a049; /* 초록색 hover */
+}
+
+/* 피부 정보 등록 화면 */
+#info-registration-container {
+  display: flex;
+  flex-direction: column;
+  gap: 15px; /* 각 항목 간 간격을 추가 */
+}
+
+#info-registration-container label,
+#info-registration-container input,
+#info-registration-container select,
+#info-registration-container button {
+  width: 100%;
+}
+
+input[type="text"], select {
+  padding: 8px;
+  font-size: 16px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
+
+label {
+  font-size: 16px;
+  margin-bottom: 5px;
+}
+
+#skin-concern-checkboxes label {
+  display: block;
+  margin: 5px 0;
+}
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+}
+
+/* 팝업창 내용이 길어질 경우 스크롤 */
+body {
+  overflow-y: auto;
+}
+
+#user-id-container {
+  display: block;
+}
+
+#info-registration-container {
+  display: none;
+}
+
+#form-container {
+  display: none;
+}
+
+/* 숨김 처리 */
+.hidden {
+  display: none;
+}
